@@ -1,0 +1,10 @@
+# .github/metadata.yaml
+# Triaged by AI-assisted bulk pass (2026-04-29).
+description: "Swift implementation of RFC 6265: HTTP State Management Mechanism."
+topics:
+  - standards
+  - rfc
+  - rfc-6265
+  - http
+  - cookies
+homepage: "https://swift-institute.org"
