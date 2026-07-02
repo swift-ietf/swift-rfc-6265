@@ -21,7 +21,7 @@ This package provides Swift namespace types for HTTP cookies as defined in [RFC 
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/swift-standards/swift-rfc-6265.git", from: "0.1.0")
+    .package(url: "https://github.com/swift-ietf/swift-rfc-6265.git", from: "0.2.2")
 ]
 ```
 
