@@ -8,7 +8,9 @@
 /// // Cookie type is extended with Parser implementation
 /// // in the swift-url-routing package
 /// ```
-public enum RFC_6265 {
+public enum RFC_6265 {}
+
+extension RFC_6265 {
     /// HTTP cookie (RFC 6265)
     public enum Cookie {}
 }
