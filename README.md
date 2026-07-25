@@ -44,4 +44,4 @@ extension RFC_6265.Cookie {
 
 ## License
 
-This library is released under the MIT license. See [LICENSE](LICENSE) for details.
+This library is released under the Apache License 2.0. See [LICENSE.md](LICENSE.md) for details.
