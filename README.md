@@ -25,6 +25,17 @@ dependencies: [
 ]
 ```
 
+Add the product to a target that needs it:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "RFC 6265", package: "swift-rfc-6265")
+    ]
+)
+```
+
 ## Usage
 
 This package provides namespace types that are extended by parser implementations (e.g., swift-url-routing):
