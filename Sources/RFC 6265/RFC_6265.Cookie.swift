@@ -41,17 +41,7 @@ extension RFC_6265.Cookie: Codable, Equatable, Hashable, CustomStringConvertible
     /// - Throws: ``Error`` when the cookie string is empty or a segment
     ///   is not a cookie pair.
     public static func parse(_ value: some StringProtocol) throws(Error) -> Self {
-        guard !value.isEmpty else { throw .emptyCookieString }
-
-        var pairs: [Pair] = []
-        for segment in Self.pairSegments(of: String(value)[...]) {
-            do {
-                pairs.append(try Pair.parse(segment))
-            } catch {
-                throw .invalidPair(String(segment), error)
-            }
-        }
-        return Self(pairs: pairs)
+        try Self(value)
     }
 
     /// Parses a `Cookie` header field value, skipping malformed segments.
@@ -63,15 +53,33 @@ extension RFC_6265.Cookie: Codable, Equatable, Hashable, CustomStringConvertible
     public static func parse(skippingInvalidPairs value: some StringProtocol) -> Self {
         var pairs: [Pair] = []
         for segment in Self.pairSegments(of: String(value)[...]) {
-            guard let pair = try? Pair.parse(segment) else { continue }
+            let pair: Pair
+            do throws(Pair.Error) {
+                pair = try Pair.parse(segment)
+            } catch {
+                continue
+            }
             pairs.append(pair)
         }
         return Self(pairs: pairs)
     }
 
     /// Creates a `Cookie` value by parsing a `Cookie` header field value.
-    public init(_ value: String) throws(Error) {
-        self = try Self.parse(value)
+    ///
+    /// - Throws: ``Error`` when the cookie string is empty or a segment
+    ///   is not a cookie pair.
+    public init(_ value: some StringProtocol) throws(Error) {
+        guard !value.isEmpty else { throw .emptyCookieString }
+
+        var pairs: [Pair] = []
+        for segment in Self.pairSegments(of: String(value)[...]) {
+            do throws(Pair.Error) {
+                pairs.append(try Pair.parse(segment))
+            } catch {
+                throw .invalidPair(String(segment), error)
+            }
+        }
+        self.pairs = pairs
     }
 
     /// Splits a cookie-string on the literal `"; "` pair delimiter

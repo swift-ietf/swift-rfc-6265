@@ -44,7 +44,13 @@ extension RFC_6265 {
             maxAge: Int? = nil,
             domain: String? = nil,
             path: String? = nil,
+            // swift-linter:disable:next bool public parameter
+            // REASON: memberwise initializer of a Codable wire-schema type (#16 Option C
+            // ledger, Entry II.3) — mirrors the RFC 6265 `Secure` presence flag verbatim.
             secure: Bool = false,
+            // swift-linter:disable:next bool public parameter
+            // REASON: memberwise initializer of a Codable wire-schema type (#16 Option C
+            // ledger, Entry II.3) — mirrors the RFC 6265 `HttpOnly` presence flag verbatim.
             httpOnly: Bool = false,
             extensions: [String] = []
         ) {
@@ -91,24 +97,32 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
     /// - Throws: ``Error`` when the cookie pair is missing or `Max-Age`
     ///   is not a valid integer.
     public static func parse(_ value: some StringProtocol) throws(Error) -> Self {
+        try Self(value)
+    }
+
+    /// Creates a `Set-Cookie` value by parsing its header field value.
+    ///
+    /// - Throws: ``Error`` when the cookie pair is missing or `Max-Age`
+    ///   is not a valid integer.
+    public init(_ value: some StringProtocol) throws(Error) {
         guard !value.isEmpty else { throw .emptySetCookieString }
         let string = String(value)[...]
         var segments = string.split(separator: ";", omittingEmptySubsequences: false)[...]
 
         guard let first = segments.popFirst() else { throw .emptySetCookieString }
         var setCookie: Self
-        do {
-            setCookie = Self(pair: try RFC_6265.Cookie.Pair.parse(trimOWS(first)))
+        do throws(RFC_6265.Cookie.Pair.Error) {
+            setCookie = Self(pair: try RFC_6265.Cookie.Pair.parse(Self.trimOWS(first)))
         } catch {
             throw .invalidPair(String(first), error)
         }
 
         for segment in segments {
-            let attribute = trimOWS(segment)
+            let attribute = Self.trimOWS(segment)
             let parts = attribute.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-            let attributeValue = parts.count == 2 ? trimOWS(parts[1]) : ""
+            let attributeValue = parts.count == 2 ? Self.trimOWS(parts[1]) : ""
 
-            switch trimOWS(parts[0]).lowercased() {
+            switch Self.trimOWS(parts[0]).lowercased() {
             case "expires":
                 setCookie.expires = String(attributeValue)
             case "max-age":
@@ -128,12 +142,7 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
                 setCookie.extensions.append(String(attribute))
             }
         }
-        return setCookie
-    }
-
-    /// Creates a `Set-Cookie` value by parsing its header field value.
-    public init(_ value: String) throws(Error) {
-        self = try Self.parse(value)
+        self = setCookie
     }
 
     /// Trims optional whitespace (SP / HTAB) from both ends of a segment.

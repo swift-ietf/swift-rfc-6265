@@ -42,17 +42,17 @@ extension RFC_6265.Cookie.Pair: Codable, Equatable, Hashable, CustomStringConver
     ///
     /// - Throws: ``Error`` when the segment contains no `=` separator.
     public static func parse(_ segment: some StringProtocol) throws(Error) -> Self {
-        guard let separator = segment.firstIndex(of: "=") else {
-            throw .missingNameValueSeparator(String(segment))
-        }
-        return Self(
-            name: String(segment[..<separator]),
-            value: String(segment[segment.index(after: separator)...])
-        )
+        try Self(segment)
     }
 
     /// Creates a cookie pair by parsing a `cookie-pair` string.
-    public init(_ segment: String) throws(Error) {
-        self = try Self.parse(segment)
+    ///
+    /// - Throws: ``Error`` when the segment contains no `=` separator.
+    public init(_ segment: some StringProtocol) throws(Error) {
+        guard let separator = segment.firstIndex(of: "=") else {
+            throw .missingNameValueSeparator(String(segment))
+        }
+        self.name = String(segment[..<separator])
+        self.value = String(segment[segment.index(after: separator)...])
     }
 }
