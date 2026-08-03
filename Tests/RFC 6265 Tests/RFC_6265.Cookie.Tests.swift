@@ -123,7 +123,10 @@ extension RFC_6265_Cookie_Tests {
         @Test
         func `lenient parse matches strict parse on well-formed input`() throws {
             let value = "SID=31d4d96e407aad42; lang=en-US"
-            #expect(RFC_6265.Cookie.parse(skippingInvalidPairs: value) == (try RFC_6265.Cookie.parse(value)))
+            #expect(
+                RFC_6265.Cookie.parse(skippingInvalidPairs: value)
+                    == (try RFC_6265.Cookie.parse(value))
+            )
         }
     }
 }
