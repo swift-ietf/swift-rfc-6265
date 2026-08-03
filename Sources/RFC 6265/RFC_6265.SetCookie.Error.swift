@@ -20,8 +20,10 @@ extension RFC_6265.SetCookie.Error: CustomStringConvertible {
         switch self {
         case .emptySetCookieString:
             return "Set-Cookie string is empty; RFC 6265 §4.1.1 requires a cookie pair"
+
         case .invalidPair(let segment, let error):
             return "Set-Cookie segment '\(segment)' is not a cookie pair: \(error)"
+
         case .invalidMaxAge(let value):
             return "Set-Cookie Max-Age value '\(value)' is not a valid integer (RFC 6265 §4.1.1)"
         }

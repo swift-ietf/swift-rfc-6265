@@ -119,25 +119,35 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
 
         for segment in segments {
             let attribute = Self.trimOWS(segment)
-            let parts = attribute.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            let parts = attribute.split(
+                separator: "=",
+                maxSplits: 1,
+                omittingEmptySubsequences: false
+            )
             let attributeValue = parts.count == 2 ? Self.trimOWS(parts[1]) : ""
 
             switch Self.trimOWS(parts[0]).lowercased() {
             case "expires":
                 setCookie.expires = String(attributeValue)
+
             case "max-age":
                 guard let seconds = Int(attributeValue) else {
                     throw .invalidMaxAge(String(attributeValue))
                 }
                 setCookie.maxAge = seconds
+
             case "domain":
                 setCookie.domain = String(attributeValue)
+
             case "path":
                 setCookie.path = String(attributeValue)
+
             case "secure" where parts.count == 1:
                 setCookie.secure = true
+
             case "httponly" where parts.count == 1:
                 setCookie.httpOnly = true
+
             default:
                 setCookie.extensions.append(String(attribute))
             }

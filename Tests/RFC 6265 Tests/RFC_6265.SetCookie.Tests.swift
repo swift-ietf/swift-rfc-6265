@@ -145,7 +145,8 @@ extension RFC_6265_SetCookie_Tests {
     struct Integration {
         @Test
         func `set-cookie value round-trips through parse and serialize`() throws {
-            let value = "SID=31d4d96e407aad42; Expires=Wed, 09 Jun 2021 10:18:14 GMT; "
+            let value =
+                "SID=31d4d96e407aad42; Expires=Wed, 09 Jun 2021 10:18:14 GMT; "
                 + "Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax"
             let setCookie = try RFC_6265.SetCookie(value)
             #expect(setCookie.headerValue == value)

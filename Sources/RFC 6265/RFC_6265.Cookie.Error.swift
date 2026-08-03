@@ -18,6 +18,7 @@ extension RFC_6265.Cookie.Error: CustomStringConvertible {
         switch self {
         case .emptyCookieString:
             return "Cookie string is empty; RFC 6265 §4.2.1 requires at least one cookie pair"
+
         case .invalidPair(let segment, let error):
             return "Cookie string segment '\(segment)' is invalid: \(error)"
         }
