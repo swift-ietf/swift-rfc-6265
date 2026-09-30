@@ -89,10 +89,12 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
                 setCookie.expires = String(attributeValue)
 
             case "max-age":
-                guard let seconds = Int(attributeValue) else {
+                let isNegative = attributeValue.first == "-"
+                let digits = isNegative ? attributeValue.dropFirst() : attributeValue
+                guard !digits.isEmpty, digits.utf8.allSatisfy({ (0x30...0x39).contains($0) }) else {
                     throw .invalidMaxAge(String(attributeValue))
                 }
-                setCookie.maxAge = seconds
+                setCookie.maxAge = Int(attributeValue) ?? (isNegative ? Int.min : Int.max)
 
             case "domain":
                 setCookie.domain = String(attributeValue)
