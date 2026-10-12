@@ -1,6 +1,6 @@
 extension RFC_6265.Cookie {
 
-    public enum Error: Swift.Error, Sendable, Equatable {
+    public enum Error: Swift::Error, Sendable, Equatable {
 
         case emptyCookieString
 
