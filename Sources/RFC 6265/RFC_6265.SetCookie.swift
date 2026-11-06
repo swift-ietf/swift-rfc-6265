@@ -8,6 +8,8 @@ extension RFC_6265 {
 
         public var pair: Cookie.Pair
 
+        // swift-linter:disable:next raw concept
+        // REASON: The Expires attribute's text, kept as sent so a Set-Cookie line round-trips; RFC 6265 5.1.1 has user agents parse it leniently and the tests keep expires=now; looked at RFC_3339.DateTime, ISO_8601.DateTime and HTTP.Date, which would lose such values, and none is among this package's dependencies.
         public var expires: String?
 
         public var maxAge: Int?
@@ -24,6 +26,8 @@ extension RFC_6265 {
 
         public init(
             pair: Cookie.Pair,
+            // swift-linter:disable:next raw concept
+            // REASON: The Expires attribute's text, kept as sent so a Set-Cookie line round-trips; RFC 6265 5.1.1 has user agents parse it leniently and the tests keep expires=now; looked at RFC_3339.DateTime, ISO_8601.DateTime and HTTP.Date, which would lose such values, and none is among this package's dependencies.
             expires: String? = nil,
             maxAge: Int? = nil,
             domain: Domain? = nil,
