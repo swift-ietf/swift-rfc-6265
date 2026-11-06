@@ -1,3 +1,7 @@
+public import Domain_Standard
+public import RFC_3986
+import RFC_3986_Foundation_Integration
+
 extension RFC_6265 {
 
     public struct SetCookie: Sendable {
@@ -8,9 +12,9 @@ extension RFC_6265 {
 
         public var maxAge: Int?
 
-        public var domain: String?
+        public var domain: Domain?
 
-        public var path: String?
+        public var path: RFC_3986.URI.Path?
 
         public var secure: Bool
 
@@ -22,8 +26,8 @@ extension RFC_6265 {
             pair: Cookie.Pair,
             expires: String? = nil,
             maxAge: Int? = nil,
-            domain: String? = nil,
-            path: String? = nil,
+            domain: Domain? = nil,
+            path: RFC_3986.URI.Path? = nil,
 
             secure: Bool = false,
 
@@ -97,10 +101,10 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
                 setCookie.maxAge = Int(attributeValue) ?? (isNegative ? Int.min : Int.max)
 
             case "domain":
-                setCookie.domain = String(attributeValue)
+                setCookie.domain = try? Domain(attributeValue.first == "." ? attributeValue.dropFirst() : attributeValue)
 
             case "path":
-                setCookie.path = String(attributeValue)
+                setCookie.path = attributeValue.first == "/" ? (try? RFC_3986.URI.Path(attributeValue)) : nil
 
             case "secure" where parts.count == 1:
                 setCookie.secure = true

@@ -1,3 +1,5 @@
+import Domain_Standard
+import RFC_3986
 import Testing
 
 @testable import RFC_6265
@@ -24,13 +26,13 @@ extension RFC_6265_SetCookie_Tests {
         func `parses the RFC 6265 Section 3 examples`() throws {
             let first = try RFC_6265.SetCookie("SID=31d4d96e407aad42; Path=/; Secure; HttpOnly")
             #expect(first.pair == .init(name: "SID", value: "31d4d96e407aad42"))
-            #expect(first.path == "/")
+            #expect(first.path?.description == "/")
             #expect(first.secure == true)
             #expect(first.httpOnly == true)
 
             let second = try RFC_6265.SetCookie("SID=31d4d96e407aad42; Path=/; Domain=example.com")
-            #expect(second.path == "/")
-            #expect(second.domain == "example.com")
+            #expect(second.path?.description == "/")
+            #expect(second.domain?.name == "example.com")
 
             let third = try RFC_6265.SetCookie(
                 "lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT"
@@ -46,13 +48,13 @@ extension RFC_6265_SetCookie_Tests {
         }
 
         @Test
-        func `serializes attributes in grammar order`() {
+        func `serializes attributes in grammar order`() throws {
             let setCookie = RFC_6265.SetCookie(
                 pair: .init(name: "SID", value: "31d4d96e407aad42"),
                 expires: "Wed, 09 Jun 2021 10:18:14 GMT",
                 maxAge: 3600,
-                domain: "example.com",
-                path: "/",
+                domain: try Domain("example.com"),
+                path: try RFC_3986.URI.Path("/"),
                 secure: true,
                 httpOnly: true,
                 extensions: ["SameSite=Lax"]
@@ -107,8 +109,8 @@ extension RFC_6265_SetCookie_Tests {
             )
             #expect(setCookie.expires == "now")
             #expect(setCookie.maxAge == 1)
-            #expect(setCookie.domain == "example.com")
-            #expect(setCookie.path == "/")
+            #expect(setCookie.domain?.name == "example.com")
+            #expect(setCookie.path?.description == "/")
             #expect(setCookie.secure == true)
             #expect(setCookie.httpOnly == true)
         }
@@ -116,7 +118,20 @@ extension RFC_6265_SetCookie_Tests {
         @Test
         func `last occurrence of a repeated attribute wins`() throws {
             let setCookie = try RFC_6265.SetCookie("id=1; Path=/a; Path=/b")
-            #expect(setCookie.path == "/b")
+            #expect(setCookie.path?.description == "/b")
+        }
+
+        @Test
+        func `a leading dot on Domain is ignored`() throws {
+            let setCookie = try RFC_6265.SetCookie("id=1; Domain=.example.com")
+            #expect(setCookie.domain?.name == "example.com")
+        }
+
+        @Test
+        func `Domain and Path that hold no domain or absolute path are unset`() throws {
+            let setCookie = try RFC_6265.SetCookie("id=1; Domain=; Path=relative")
+            #expect(setCookie.domain == nil)
+            #expect(setCookie.path == nil)
         }
 
         @Test
@@ -136,7 +151,7 @@ extension RFC_6265_SetCookie_Tests {
         func `optional whitespace around attributes is trimmed`() throws {
             let setCookie = try RFC_6265.SetCookie("  id=1 ;  Path = /  ; Secure ")
             #expect(setCookie.pair == .init(name: "id", value: "1"))
-            #expect(setCookie.path == "/")
+            #expect(setCookie.path?.description == "/")
             #expect(setCookie.secure == true)
         }
     }
