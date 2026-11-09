@@ -120,13 +120,14 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
                 domain = try? Domain(attributeValue.first == "." ? attributeValue.dropFirst() : attributeValue)
 
             case "path":
-                if attributeValue.first == "/", let candidate = try? RFC_3986.URI.Path(attributeValue),
-                    Self.isAttributeValue(candidate.description)
-                {
-                    path = candidate
-                } else {
-                    path = nil
-                }
+                path =
+                    if attributeValue.first == "/", let candidate = try? RFC_3986.URI.Path(attributeValue),
+                        Self.isAttributeValue(candidate.description)
+                    {
+                        candidate
+                    } else {
+                        nil
+                    }
 
             case "secure" where parts.count == 1:
                 secure = true
