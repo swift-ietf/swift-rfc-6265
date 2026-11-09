@@ -1,3 +1,4 @@
+import Foundation
 import Domain_Standard
 import RFC_3986
 import Testing
@@ -49,7 +50,7 @@ extension RFC_6265_SetCookie_Tests {
 
         @Test
         func `serializes attributes in grammar order`() throws {
-            let setCookie = RFC_6265.SetCookie(
+            let setCookie = try RFC_6265.SetCookie(
                 pair: try .init(name: "SID", value: "31d4d96e407aad42"),
                 expires: "Wed, 09 Jun 2021 10:18:14 GMT",
                 maxAge: 3600,
@@ -145,6 +146,46 @@ extension RFC_6265_SetCookie_Tests {
             let setCookie = try RFC_6265.SetCookie("id=1; Secure=verily")
             #expect(setCookie.secure == false)
             #expect(setCookie.extensions == ["Secure=verily"])
+        }
+
+        @Test(arguments: ["now; Domain=evil.example", "now\r\nX: y", "nöw"])
+        func `an Expires that would break the header is rejected`(_ expires: String) throws {
+            let pair = try RFC_6265.Cookie.Pair(name: "id", value: "1")
+            #expect(throws: RFC_6265.SetCookie.Error.invalidExpires(expires)) {
+                try RFC_6265.SetCookie(pair: pair, expires: expires)
+            }
+        }
+
+        @Test(arguments: ["SameSite=Lax; Domain=evil.example", "Partitioned\u{0}"])
+        func `an extension that would break the header is rejected`(_ value: String) throws {
+            let pair = try RFC_6265.Cookie.Pair(name: "id", value: "1")
+            #expect(throws: RFC_6265.SetCookie.Error.invalidExtension(value)) {
+                try RFC_6265.SetCookie(pair: pair, extensions: ["Secure", value])
+            }
+        }
+
+        @Test
+        func `a Path holding a semicolon is rejected`() throws {
+            let pair = try RFC_6265.Cookie.Pair(name: "id", value: "1")
+            let path = try RFC_3986.URI.Path("/a;Domain=evil.example")
+            #expect(throws: RFC_6265.SetCookie.Error.invalidPath(path.description)) {
+                try RFC_6265.SetCookie(pair: pair, path: path)
+            }
+        }
+
+        @Test
+        func `a parsed Expires holding a control character is rejected`() {
+            #expect(throws: RFC_6265.SetCookie.Error.invalidExpires("now\u{7F}")) {
+                try RFC_6265.SetCookie.parse("id=1; Expires=now\u{7F}")
+            }
+        }
+
+        @Test
+        func `a decoded set-cookie is held to the grammar`() {
+            let json = #"{"pair":{"name":"id","value":"1"},"secure":false,"httpOnly":false,"extensions":["a;b"]}"#
+            #expect(throws: RFC_6265.SetCookie.Error.invalidExtension("a;b")) {
+                try JSONDecoder().decode(RFC_6265.SetCookie.self, from: Data(json.utf8))
+            }
         }
 
         @Test

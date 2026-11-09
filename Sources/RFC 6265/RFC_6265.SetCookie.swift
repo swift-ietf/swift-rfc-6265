@@ -10,19 +10,19 @@ extension RFC_6265 {
 
         // swift-linter:disable:next raw concept
         // REASON: The Expires attribute's text, kept as sent so a Set-Cookie line round-trips; RFC 6265 5.1.1 has user agents parse it leniently and the tests keep expires=now; looked at RFC_3339.DateTime, ISO_8601.DateTime and HTTP.Date, which would lose such values, and none is among this package's dependencies.
-        public var expires: String?
+        public private(set) var expires: String?
 
         public var maxAge: Int?
 
         public var domain: Domain?
 
-        public var path: RFC_3986.URI.Path?
+        public private(set) var path: RFC_3986.URI.Path?
 
         public var secure: Bool
 
         public var httpOnly: Bool
 
-        public var extensions: [String]
+        public private(set) var extensions: [String]
 
         public init(
             pair: Cookie.Pair,
@@ -37,7 +37,12 @@ extension RFC_6265 {
 
             httpOnly: Bool = false,
             extensions: [String] = []
-        ) {
+        ) throws(Error) {
+            if let expires, !Self.isAttributeValue(expires) { throw .invalidExpires(expires) }
+            if let path, !Self.isAttributeValue(path.description) { throw .invalidPath(path.description) }
+            if let invalid = extensions.first(where: { !Self.isAttributeValue($0) }) {
+                throw .invalidExtension(invalid)
+            }
             self.pair = pair
             self.expires = expires
             self.maxAge = maxAge
@@ -76,12 +81,19 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
         var segments = string.split(separator: ";", omittingEmptySubsequences: false)[...]
 
         guard let first = segments.popFirst() else { throw .emptySetCookieString }
-        var setCookie: Self
+        let pair: RFC_6265.Cookie.Pair
         do throws(RFC_6265.Cookie.Pair.Error) {
-            setCookie = Self(pair: try RFC_6265.Cookie.Pair.parse(Self.trimOWS(first)))
+            pair = try RFC_6265.Cookie.Pair.parse(Self.trimOWS(first))
         } catch {
             throw .invalidPair(String(first), error)
         }
+        var expires: String?
+        var maxAge: Int?
+        var domain: Domain?
+        var path: RFC_3986.URI.Path?
+        var secure = false
+        var httpOnly = false
+        var extensions: [String] = []
 
         for segment in segments {
             let attribute = Self.trimOWS(segment)
@@ -94,7 +106,7 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
 
             switch Self.trimOWS(parts[0]).lowercased() {
             case "expires":
-                setCookie.expires = String(attributeValue)
+                expires = String(attributeValue)
 
             case "max-age":
                 let isNegative = attributeValue.first == "-"
@@ -102,25 +114,69 @@ extension RFC_6265.SetCookie: Codable, Equatable, Hashable, CustomStringConverti
                 guard !digits.isEmpty, digits.utf8.allSatisfy({ (0x30...0x39).contains($0) }) else {
                     throw .invalidMaxAge(String(attributeValue))
                 }
-                setCookie.maxAge = Int(attributeValue) ?? (isNegative ? Int.min : Int.max)
+                maxAge = Int(attributeValue) ?? (isNegative ? Int.min : Int.max)
 
             case "domain":
-                setCookie.domain = try? Domain(attributeValue.first == "." ? attributeValue.dropFirst() : attributeValue)
+                domain = try? Domain(attributeValue.first == "." ? attributeValue.dropFirst() : attributeValue)
 
             case "path":
-                setCookie.path = attributeValue.first == "/" ? (try? RFC_3986.URI.Path(attributeValue)) : nil
+                if attributeValue.first == "/", let candidate = try? RFC_3986.URI.Path(attributeValue),
+                    Self.isAttributeValue(candidate.description)
+                {
+                    path = candidate
+                } else {
+                    path = nil
+                }
 
             case "secure" where parts.count == 1:
-                setCookie.secure = true
+                secure = true
 
             case "httponly" where parts.count == 1:
-                setCookie.httpOnly = true
+                httpOnly = true
 
             default:
-                setCookie.extensions.append(String(attribute))
+                extensions.append(String(attribute))
             }
         }
-        self = setCookie
+        try self.init(
+            pair: pair,
+            expires: expires,
+            maxAge: maxAge,
+            domain: domain,
+            path: path,
+            secure: secure,
+            httpOnly: httpOnly,
+            extensions: extensions
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case pair
+        case expires
+        case maxAge
+        case domain
+        case path
+        case secure
+        case httpOnly
+        case extensions
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(
+            pair: try container.decode(RFC_6265.Cookie.Pair.self, forKey: .pair),
+            expires: try container.decodeIfPresent(String.self, forKey: .expires),
+            maxAge: try container.decodeIfPresent(Int.self, forKey: .maxAge),
+            domain: try container.decodeIfPresent(Domain.self, forKey: .domain),
+            path: try container.decodeIfPresent(RFC_3986.URI.Path.self, forKey: .path),
+            secure: try container.decode(Bool.self, forKey: .secure),
+            httpOnly: try container.decode(Bool.self, forKey: .httpOnly),
+            extensions: try container.decode([String].self, forKey: .extensions)
+        )
+    }
+
+    private static func isAttributeValue(_ value: some StringProtocol) -> Bool {
+        value.utf8.allSatisfy { byte in (0x20...0x7E).contains(byte) && byte != 0x3B }
     }
 
     private static func trimOWS(_ value: Substring) -> Substring {
