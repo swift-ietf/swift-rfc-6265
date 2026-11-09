@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import RFC_6265
@@ -10,14 +11,14 @@ extension RFC_6265_Cookie_Tests {
         @Test
         func `parses a single cookie pair`() throws {
             let cookie = try RFC_6265.Cookie("SID=31d4d96e407aad42")
-            #expect(cookie.pairs == [.init(name: "SID", value: "31d4d96e407aad42")])
+            #expect(try cookie.pairs == [.init(name: "SID", value: "31d4d96e407aad42")])
         }
 
         @Test
         func `parses multiple cookie pairs in order`() throws {
             let cookie = try RFC_6265.Cookie("SID=31d4d96e407aad42; lang=en-US")
             #expect(
-                cookie.pairs == [
+                try cookie.pairs == [
                     .init(name: "SID", value: "31d4d96e407aad42"),
                     .init(name: "lang", value: "en-US"),
                 ]
@@ -25,9 +26,9 @@ extension RFC_6265_Cookie_Tests {
         }
 
         @Test
-        func `serializes pairs joined by the pair delimiter`() {
+        func `serializes pairs joined by the pair delimiter`() throws {
             let cookie = RFC_6265.Cookie(
-                pairs: [
+                pairs: try [
                     .init(name: "SID", value: "31d4d96e407aad42"),
                     .init(name: "lang", value: "en-US"),
                 ]
@@ -73,10 +74,10 @@ extension RFC_6265_Cookie_Tests {
         }
 
         @Test
-        func `lenient parse skips segments without separator`() {
+        func `lenient parse skips segments without separator`() throws {
             let cookie = RFC_6265.Cookie.parse(skippingInvalidPairs: "a=1; junk; b=2")
             #expect(
-                cookie.pairs == [
+                try cookie.pairs == [
                     .init(name: "a", value: "1"),
                     .init(name: "b", value: "2"),
                 ]
@@ -86,26 +87,52 @@ extension RFC_6265_Cookie_Tests {
         @Test
         func `empty value is preserved`() throws {
             let cookie = try RFC_6265.Cookie("a=")
-            #expect(cookie.pairs == [.init(name: "a", value: "")])
+            #expect(try cookie.pairs == [.init(name: "a", value: "")])
             #expect(cookie.headerValue == "a=")
         }
 
         @Test
-        func `empty name is preserved`() throws {
-            let cookie = try RFC_6265.Cookie("=v")
-            #expect(cookie.pairs == [.init(name: "", value: "v")])
+        func `empty name is rejected`() {
+            #expect(throws: RFC_6265.Cookie.Error.invalidPair("=v", .invalidName(""))) {
+                try RFC_6265.Cookie("=v")
+            }
         }
 
         @Test
-        func `semicolon without following space is not a pair delimiter`() throws {
-            let cookie = try RFC_6265.Cookie("a=1;b=2")
-            #expect(cookie.pairs == [.init(name: "a", value: "1;b=2")])
+        func `semicolon without following space is rejected as a value octet`() {
+            #expect(
+                throws: RFC_6265.Cookie.Error.invalidPair("a=1;b=2", .invalidValue("1;b=2"))
+            ) {
+                try RFC_6265.Cookie("a=1;b=2")
+            }
+        }
+
+        @Test(arguments: ["a b", "a;b", "a=b", "a\"b", "a\u{1}b", "", "é"])
+        func `a name outside the token grammar is rejected`(_ name: String) {
+            #expect(throws: RFC_6265.Cookie.Pair.Error.invalidName(name)) {
+                try RFC_6265.Cookie.Pair(name: name, value: "v")
+            }
+        }
+
+        @Test(arguments: ["1; evil=2", "1;evil=2", "a b", "a,b", "a\\b", "\"a", "a\r\nb", "é"])
+        func `a value outside cookie-octet is rejected`(_ value: String) {
+            #expect(throws: RFC_6265.Cookie.Pair.Error.invalidValue(value)) {
+                try RFC_6265.Cookie.Pair(name: "a", value: value)
+            }
+        }
+
+        @Test
+        func `a decoded pair is held to the grammar`() throws {
+            let data = Array(#"{"name":"a","value":"1; evil=2"}"#.utf8)
+            #expect(throws: RFC_6265.Cookie.Pair.Error.invalidValue("1; evil=2")) {
+                try JSONDecoder().decode(RFC_6265.Cookie.Pair.self, from: Data(data))
+            }
         }
 
         @Test
         func `quoted value is stored verbatim`() throws {
             let cookie = try RFC_6265.Cookie(#"a="quoted""#)
-            #expect(cookie.pairs == [.init(name: "a", value: #""quoted""#)])
+            #expect(try cookie.pairs == [.init(name: "a", value: #""quoted""#)])
             #expect(cookie.headerValue == #"a="quoted""#)
         }
     }

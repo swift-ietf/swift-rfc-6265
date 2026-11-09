@@ -12,7 +12,7 @@ extension RFC_6265_SetCookie_Tests {
         @Test
         func `parses a bare cookie pair`() throws {
             let setCookie = try RFC_6265.SetCookie("SID=31d4d96e407aad42")
-            #expect(setCookie.pair == .init(name: "SID", value: "31d4d96e407aad42"))
+            #expect(try setCookie.pair == .init(name: "SID", value: "31d4d96e407aad42"))
             #expect(setCookie.expires == nil)
             #expect(setCookie.maxAge == nil)
             #expect(setCookie.domain == nil)
@@ -25,7 +25,7 @@ extension RFC_6265_SetCookie_Tests {
         @Test
         func `parses the RFC 6265 Section 3 examples`() throws {
             let first = try RFC_6265.SetCookie("SID=31d4d96e407aad42; Path=/; Secure; HttpOnly")
-            #expect(first.pair == .init(name: "SID", value: "31d4d96e407aad42"))
+            #expect(try first.pair == .init(name: "SID", value: "31d4d96e407aad42"))
             #expect(first.path?.description == "/")
             #expect(first.secure == true)
             #expect(first.httpOnly == true)
@@ -37,7 +37,7 @@ extension RFC_6265_SetCookie_Tests {
             let third = try RFC_6265.SetCookie(
                 "lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT"
             )
-            #expect(third.pair == .init(name: "lang", value: "en-US"))
+            #expect(try third.pair == .init(name: "lang", value: "en-US"))
             #expect(third.expires == "Wed, 09 Jun 2021 10:18:14 GMT")
         }
 
@@ -50,7 +50,7 @@ extension RFC_6265_SetCookie_Tests {
         @Test
         func `serializes attributes in grammar order`() throws {
             let setCookie = RFC_6265.SetCookie(
-                pair: .init(name: "SID", value: "31d4d96e407aad42"),
+                pair: try .init(name: "SID", value: "31d4d96e407aad42"),
                 expires: "Wed, 09 Jun 2021 10:18:14 GMT",
                 maxAge: 3600,
                 domain: try Domain("example.com"),
@@ -150,7 +150,7 @@ extension RFC_6265_SetCookie_Tests {
         @Test
         func `optional whitespace around attributes is trimmed`() throws {
             let setCookie = try RFC_6265.SetCookie("  id=1 ;  Path = /  ; Secure ")
-            #expect(setCookie.pair == .init(name: "id", value: "1"))
+            #expect(try setCookie.pair == .init(name: "id", value: "1"))
             #expect(setCookie.path?.description == "/")
             #expect(setCookie.secure == true)
         }

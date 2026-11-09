@@ -4,9 +4,9 @@ Use this package when you need to read or write the Cookie request header or a S
 
 ## Laws
 
-- In a Cookie header, pairs are separated only by a semicolon followed by a space. `a=1;b=2` is one pair whose value is `1;b=2`.
-- A pair splits at its first `=`. The name and value are kept exactly as written, so an empty name, an empty value, quotes and further `=` signs all survive a round trip.
-- `RFC_6265.Cookie.init(_:)` fails on an empty string or on any segment without `=`. `RFC_6265.Cookie.parse(skippingInvalidPairs:)` never fails and drops those segments.
+- In a Cookie header, pairs are separated only by a semicolon followed by a space. In `a=1;b=2` the value `1;b=2` holds a semicolon, so the pair is invalid.
+- A pair splits at its first `=`. The name must be an RFC 6265 `cookie-name` token and the value a `cookie-value` (cookie-octets, optionally in double quotes); `RFC_6265.Cookie.Pair.init(name:value:)` and decoding refuse anything else, so no pair can write a `;`, space, comma or control character into a header. An empty value, quotes and further `=` signs in the value survive a round trip.
+- `RFC_6265.Cookie.init(_:)` fails on an empty string or on any segment that is not a valid pair. `RFC_6265.Cookie.parse(skippingInvalidPairs:)` never fails and drops those segments.
 - A Set-Cookie header is split at every semicolon, and spaces and tabs are trimmed around each part, around attribute names and around attribute values.
 - The first part of a Set-Cookie header must be a pair. Attribute names match case-insensitively, and when an attribute repeats, the last one wins.
 - `Expires` is kept as text, with no checks. `Domain` is read as a `Domain`, ignoring a leading dot, and `Path` as an `RFC_3986.URI.Path`; a value that holds neither leaves the attribute unset, as RFC 6265 Sections 5.2.3 and 5.2.4 say.
