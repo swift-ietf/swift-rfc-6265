@@ -1,4 +1,5 @@
 import Foundation
+import RFC_9110
 import Testing
 
 @testable import RFC_6265
@@ -8,6 +9,11 @@ struct RFC_6265_Cookie_Tests {}
 extension RFC_6265_Cookie_Tests {
     @Suite
     struct Unit {
+        @Test
+        func `the field names RFC 6265 registers are spelled as registered`() {
+            #expect([RFC_9110.Field.Name.cookie, .setCookie].map(\.rawValue) == ["Cookie", "Set-Cookie"])
+        }
+
         @Test
         func `parses a single cookie pair`() throws {
             let cookie = try RFC_6265.Cookie("SID=31d4d96e407aad42")

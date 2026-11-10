@@ -4,6 +4,7 @@ Use this package when you need to read or write the Cookie request header or a S
 
 ## Laws
 
+- `RFC_9110.Field.Name.cookie` and `.setCookie` are the two field names RFC 6265 registers, spelled `Cookie` and `Set-Cookie`.
 - In a Cookie header, pairs are separated only by a semicolon followed by a space. In `a=1;b=2` the value `1;b=2` holds a semicolon, so the pair is invalid.
 - A pair splits at its first `=`. The name must be an RFC 6265 `cookie-name` token and the value a `cookie-value` (cookie-octets, optionally in double quotes); `RFC_6265.Cookie.Pair.init(name:value:)` and decoding refuse anything else, so no pair can write a `;`, space, comma or control character into a header. An empty value, quotes and further `=` signs in the value survive a round trip.
 - `RFC_6265.Cookie.init(_:)` fails on an empty string or on any segment that is not a valid pair. `RFC_6265.Cookie.parse(skippingInvalidPairs:)` never fails and drops those segments.

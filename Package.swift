@@ -20,6 +20,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swift-ietf/swift-rfc-3986.git", branch: "main"),
         .package(url: "https://github.com/swift-standards/swift-domain-standard.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-9110.git", branch: "main"),
     ],
     targets: [
         .target(
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "Domain Standard", package: "swift-domain-standard"),
                 .product(name: "RFC 3986", package: "swift-rfc-3986"),
                 .product(name: "RFC 3986 Foundation Integration", package: "swift-rfc-3986"),
+                .product(name: "RFC 9110", package: "swift-rfc-9110"),
             ]
         ),
         .testTarget(
@@ -36,6 +38,7 @@ let package = Package(
                 .target(name: "RFC 6265"),
                 .product(name: "Domain Standard", package: "swift-domain-standard"),
                 .product(name: "RFC 3986", package: "swift-rfc-3986"),
+                .product(name: "RFC 9110", package: "swift-rfc-9110"),
             ]
         ),
     ],
